@@ -21,9 +21,27 @@ Docker Compose.
 
 ## Разработка (локально, без Docker)
 
+БД поднимается в Docker в любом случае, приложение — локально через Poetry.
+
+Контейнер `db` слушает порт `5433` на хосте (не `5432` — порт мог быть занят
+нативной службой PostgreSQL на Windows). Для подключения с хоста нужно
+переопределить `DATABASE_URL`, указав `localhost:5433` вместо `db:5432`
+из `.env`:
+
 ```powershell
+docker-compose up -d db
 poetry install
-poetry run uvicorn app.main:app --reload --app-dir backend
+cd backend
+$env:DATABASE_URL = "postgresql+psycopg://chatbot_habit:<пароль_из_.env>@localhost:5433/chatbot_habit"
+poetry run alembic upgrade head
+poetry run uvicorn app.main:app --reload
+```
+
+Новая миграция после изменения моделей:
+
+```powershell
+cd backend
+poetry run alembic revision --autogenerate -m "описание изменения"
 ```
 
 ## Запуск всего стека
