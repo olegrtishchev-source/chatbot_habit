@@ -9,6 +9,7 @@ from app.api_client import (
     create_habit,
     delete_habit,
     list_habits,
+    uncomplete_habit,
     update_habit,
 )
 from app.keyboards import build_cancel_keyboard, build_habit_keyboard, build_skip_keyboard
@@ -165,6 +166,20 @@ def register_habit_handlers(bot: TeleBot) -> None:
                     f"✅ Отмечено выполненным сегодня. "
                     f"Серия: {result['current_streak']} дней подряд.",
                 )
+            return
+
+        if action == "uncomplete" and habit_id is not None:
+            bot.answer_callback_query(call.id)
+            try:
+                result = uncomplete_habit(telegram_id, telegram_username, habit_id)
+            except ApiError as error:
+                bot.send_message(chat_id, f"Не удалось снять отметку: {error}")
+                return
+            bot.send_message(
+                chat_id,
+                "❌ Отметка о выполнении сегодня снята. "
+                f"Серия: {result['current_streak']} дней подряд.",
+            )
             return
 
         if action == "edit" and habit_id is not None:

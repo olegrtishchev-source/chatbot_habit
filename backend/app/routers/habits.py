@@ -132,3 +132,35 @@ def complete_habit(
         current_streak=current_streak,
         habit_formed=habit_formed,
     )
+
+
+@router.post("/{habit_id}/uncomplete", response_model=HabitCompletionResult)
+def uncomplete_habit(
+    habit_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> HabitCompletionResult:
+    """Снимает отметку о выполнении привычки сегодня. Повторный вызов идемпотентен."""
+    habit = get_active_habit_or_404(db, habit_id, current_user.id)
+    today = date.today()
+
+    habit_log = (
+        db.query(HabitLog).filter(HabitLog.habit_id == habit.id, HabitLog.date == today).first()
+    )
+    if habit_log is None:
+        habit_log = HabitLog(habit_id=habit.id, date=today, is_completed=False, marked_at=None)
+        db.add(habit_log)
+    elif habit_log.is_completed:
+        habit_log.is_completed = False
+        habit_log.marked_at = None
+
+    db.commit()
+    db.refresh(habit_log)
+
+    current_streak, habit_formed = update_streak_and_deactivate_if_formed(db, habit)
+
+    return HabitCompletionResult(
+        habit_log=HabitLogRead.model_validate(habit_log),
+        current_streak=current_streak,
+        habit_formed=habit_formed,
+    )

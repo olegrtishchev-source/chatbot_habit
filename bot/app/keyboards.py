@@ -8,9 +8,12 @@ def build_habit_keyboard(habit_id: int) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup()
     keyboard.row(
         InlineKeyboardButton("✅ Выполнено", callback_data=f"complete:{habit_id}"),
-        InlineKeyboardButton("✏️ Изменить", callback_data=f"edit:{habit_id}"),
+        InlineKeyboardButton("❌ Не выполнено", callback_data=f"uncomplete:{habit_id}"),
     )
-    keyboard.row(InlineKeyboardButton("🗑 Удалить", callback_data=f"delete:{habit_id}"))
+    keyboard.row(
+        InlineKeyboardButton("✏️ Изменить", callback_data=f"edit:{habit_id}"),
+        InlineKeyboardButton("🗑 Удалить", callback_data=f"delete:{habit_id}"),
+    )
     return keyboard
 
 

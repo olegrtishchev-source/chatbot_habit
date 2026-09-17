@@ -130,3 +130,11 @@ def complete_habit(
     """Отмечает привычку выполненной сегодня."""
     response = _request("POST", f"/habits/{habit_id}/complete", telegram_id, telegram_username)
     return dict(response.json())
+
+
+def uncomplete_habit(
+    telegram_id: int, telegram_username: str | None, habit_id: int
+) -> dict[str, Any]:
+    """Снимает отметку о выполнении привычки сегодня."""
+    response = _request("POST", f"/habits/{habit_id}/uncomplete", telegram_id, telegram_username)
+    return dict(response.json())
