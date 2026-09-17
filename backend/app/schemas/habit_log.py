@@ -15,3 +15,11 @@ class HabitLogRead(BaseModel):
     date: date
     is_completed: bool
     marked_at: datetime | None
+
+
+class HabitCompletionResult(BaseModel):
+    """Результат отметки выполнения: сам лог, текущая серия и статус привычки."""
+
+    habit_log: HabitLogRead
+    current_streak: int
+    habit_formed: bool

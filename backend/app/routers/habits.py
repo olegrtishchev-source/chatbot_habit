@@ -9,7 +9,8 @@ from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models import Habit, HabitLog, User
 from app.schemas.habit import HabitCreate, HabitRead, HabitUpdate
-from app.schemas.habit_log import HabitLogRead
+from app.schemas.habit_log import HabitCompletionResult, HabitLogRead
+from app.services.streak import update_streak_and_deactivate_if_formed
 
 router = APIRouter(prefix="/habits", tags=["habits"])
 
@@ -94,13 +95,18 @@ def delete_habit(
     db.commit()
 
 
-@router.post("/{habit_id}/complete", response_model=HabitLogRead)
+@router.post("/{habit_id}/complete", response_model=HabitCompletionResult)
 def complete_habit(
     habit_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> HabitLog:
-    """Отмечает привычку выполненной сегодня. Повторный вызов идемпотентен."""
+) -> HabitCompletionResult:
+    """Отмечает привычку выполненной сегодня. Повторный вызов идемпотентен.
+
+    Пересчитывает серию выполнений подряд; если привычка набрала целевую серию
+    (HABIT_STREAK_TARGET, по умолчанию 21 день), она автоматически отключается
+    как сформированная.
+    """
     habit = get_active_habit_or_404(db, habit_id, current_user.id)
     today = date.today()
 
@@ -118,4 +124,11 @@ def complete_habit(
 
     db.commit()
     db.refresh(habit_log)
-    return habit_log
+
+    current_streak, habit_formed = update_streak_and_deactivate_if_formed(db, habit)
+
+    return HabitCompletionResult(
+        habit_log=HabitLogRead.model_validate(habit_log),
+        current_streak=current_streak,
+        habit_formed=habit_formed,
+    )
