@@ -44,6 +44,29 @@ cd backend
 poetry run alembic revision --autogenerate -m "описание изменения"
 ```
 
+### Ручное тестирование эндпоинтов из PowerShell
+
+В Windows PowerShell 5.1 (не PowerShell 7) `Invoke-RestMethod` некорректно работает с
+кириллицей: при отправке кодирует тело запроса не в UTF-8, а при получении ответа —
+неверно угадывает кодировку JSON без явного `charset`. Данные в базе и в самом API
+при этом остаются корректными (проверяется через `docker-compose exec db psql`) —
+проблема только в клиенте, которым мы тестируем вручную. Реального бота (Python,
+`httpx`) это не касается.
+
+Чтобы кириллица корректно отправлялась и отображалась при ручных проверках:
+
+```powershell
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001
+
+function Send-JsonPost {
+    param($Uri, $Headers, $Body, $Method = "Post")
+    $json = $Body | ConvertTo-Json
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
+    Invoke-RestMethod -Uri $Uri -Method $Method -Headers $Headers -ContentType "application/json; charset=utf-8" -Body $bytes
+}
+```
+
 ## Запуск всего стека
 
 ```powershell
