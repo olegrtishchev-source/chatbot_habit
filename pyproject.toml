@@ -37,6 +37,11 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI использует вызов Depends()/Security() как значение по умолчанию —
+# это официальный паттерн фреймворка, а не ошибка (см. B008)
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Security"]
+
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
